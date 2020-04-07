@@ -64,7 +64,17 @@ int InsertIntoPrefixTreeRecurse(PTREENODE pTreeStart, unsigned int uLevel, unsig
       if (!pIterate->pRight)
       {
         //printf("Needed alloc\n");
-        pIterate->pRight = calloc(1, sizeof(TREENODE));
+        if ((uLevel % 2) == 0)
+        {
+          /* By allocating parent and child nodes in the same memory block
+             the 3 nodes will (almost) fit within a 64 byte cache line,
+             making it faster to traverse down the tree. */
+          pIterate->pRight = calloc(1, sizeof(TREENODE) * 3);
+        }
+        else
+        {
+          pIterate->pRight = pIterate + 1;
+        }
       }
 
       pIterate = pIterate->pRight;
@@ -75,7 +85,14 @@ int InsertIntoPrefixTreeRecurse(PTREENODE pTreeStart, unsigned int uLevel, unsig
       if (!pIterate->pLeft)
       {
         //printf("Needed alloc\n");
-        pIterate->pLeft = calloc(1, sizeof(TREENODE));
+        if ((uLevel % 2) == 0)
+        {
+          pIterate->pLeft = calloc(1, sizeof(TREENODE) * 3);
+        }
+        else
+        {
+          pIterate->pLeft = pIterate + 2;
+        }
       }
 
       pIterate = pIterate->pLeft;
@@ -95,8 +112,6 @@ int InsertIntoPrefixTreeRecurse(PTREENODE pTreeStart, unsigned int uLevel, unsig
     routeSecond.u32Size  = pRoute->u32Size / 2;
     routeSecond.u32Start = pRoute->u32Start + routeSecond.u32Size;
 
-    routeFirst.u32NextHopIndex = routeSecond.u32NextHopIndex = pRouteEntry->u32NextHopIndex;
-
     //printf("Needed to split. First size: %u. Second size: %u\n", routeFirst.u32Size, routeSecond.u32Size);
     //PrintIP(routeFirst.u32Start);
     //PrintIP(routeSecond.u32Start);
@@ -111,7 +126,6 @@ int InsertIntoPrefixTreeRecurse(PTREENODE pTreeStart, unsigned int uLevel, unsig
   else
   {
     //printf("Inserted at level %u\n", uLevel);
-    pIterate->u32Prefix = pRoute->u32Start;
     pIterate->pRoute = calloc(1, sizeof(*pIterate->pRoute));
     if (!pIterate->pRoute)
     {
@@ -121,31 +135,34 @@ int InsertIntoPrefixTreeRecurse(PTREENODE pTreeStart, unsigned int uLevel, unsig
     pIterate->pRoute->u32Start = pRoute->u32Start;
     pIterate->pRoute->u32Size = pRoute->u32Size;
     pIterate->pRoute->u32NextHopIndex = pRouteEntry->u32NextHopIndex;
-    pIterate->u32NextHopIndex = pRouteEntry->u32NextHopIndex;
   }
   
   return 0;
 }
 
-void FreePrefixTreeRecurse(PTREENODE pTreeNode)
+void FreePrefixTreeRecurse(PTREENODE pTreeNode, unsigned int uLevel)
 {
   if (pTreeNode->pLeft)
   {
-    FreePrefixTreeRecurse(pTreeNode->pLeft);
+    FreePrefixTreeRecurse(pTreeNode->pLeft, uLevel + 1);
   }
   if (pTreeNode->pRight)
   {
-    FreePrefixTreeRecurse(pTreeNode->pRight);
+    FreePrefixTreeRecurse(pTreeNode->pRight, uLevel + 1);
   }
 
   free(pTreeNode->pRoute);
-  free(pTreeNode);
+
+  if (uLevel % 2 == 1)
+  {
+    free(pTreeNode);
+  }
 }
 
 void FreePrefixTree(void)
 {
-  FreePrefixTreeRecurse(root.pLeft);
-  FreePrefixTreeRecurse(root.pRight);
+  FreePrefixTreeRecurse(root.pLeft, 1);
+  FreePrefixTreeRecurse(root.pRight, 1);
 
   root.pLeft  = NULL;
   root.pRight = NULL;
@@ -167,7 +184,7 @@ PROUTEENTRY LookupInTree(uint32_t u32IP)
     if (pIterate->pRoute)
     {
       //return pIterate->pRoute;
-      return &pNextHops[pIterate->u32NextHopIndex];
+      return &pNextHops[pIterate->pRoute->u32NextHopIndex];
     }
 
     if (u32IP & uMask)

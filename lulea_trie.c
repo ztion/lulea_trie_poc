@@ -65,7 +65,7 @@ int RecurseRadixTree(PTREENODE pTreeNode)
   {
     uint16_t u16Level1Offset = 0;
 
-    u16Level1Offset = (pTreeNode->u32Prefix & 0xFFFF0000) >> 16;
+    u16Level1Offset = (pTreeNode->pRoute->u32Start & 0xFFFF0000) >> 16;
 
     BucketPrefix(pLevel1Buckets, u16Level1Offset, pachBucketGroupNumPrefixes, pTreeNode->pRoute);
   }

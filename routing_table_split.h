@@ -34,9 +34,6 @@ typedef struct tagROUTEENTRY
 
 typedef struct tagTREENODE
 {
-    uint32_t            u32Prefix;
-    uint32_t            u32NextHopIndex;
-
     struct tagTREENODE *pLeft;
     struct tagTREENODE *pRight;
 

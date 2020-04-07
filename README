@@ -9,3 +9,7 @@ To run it you will need a BGP dump (latest-biew.gz) which you can get from:
 https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris/ris-raw-data
 
 If you modify this, remember that there needs to be a route for all parts of the address space, or the algorithm does not work. So if you have an incomplete routing table, you will need to put in a 0.0.0.0/0 route and have some flag in the route (no route here flag).
+
+To learn more about the Luleå algorithm see:
+https://en.wikipedia.org/wiki/Lule%C3%A5_algorithm
+

@@ -1,0 +1,11 @@
+I had never seen an open source implementation for the Luleå Algorithm anywhere, so I decided to write one myself. The implementation as you see here is slightly modified to support more pointers and a bigger structure overall, as the number of routes in BGP nowadays is much larger than in the late 90s when the algorithm was designed.
+
+It is also modified to not use the maptable, instead storing the bitmask for the bucket group in the codeword, and using the popcount hardware instruction to find out how many pointers to skip for a given IP. Thus saving a memory reference.
+
+To build you need libbgpdump. Get it from:
+http://ris.ripe.net/source/bgpdump/
+
+To run it you will need a BGP dump (latest-biew.gz) which you can get from:
+https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris/ris-raw-data
+
+If you modify this, remember that there needs to be a route for all parts of the address space, or the algorithm does not work. So if you have an incomplete routing table, you will need to put in a 0.0.0.0/0 route and have some flag in the route (no route here flag).
